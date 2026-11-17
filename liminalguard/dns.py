@@ -33,8 +33,8 @@ def question(packet):
         offset += size
     if sum(len(label) + 1 for label in labels) + 1 > 255 or end + 4 > len(packet):
         raise ValueError("Invalid DNS question")
-    kind, family = struct.unpack_from("!HH", packet, end)
-    return (tuple(labels), kind, family), end + 4
+    record_type, record_class = struct.unpack_from("!HH", packet, end)
+    return (tuple(labels), record_type, record_class), end + 4
 
 
 def validate_query(packet):
@@ -87,12 +87,12 @@ def addresses(reply):
             position += size
         if position + 10 > len(reply):
             raise ValueError("Incomplete answer record")
-        kind, family, _, size = struct.unpack_from("!HHIH", reply, position)
+        record_type, record_class, _, size = struct.unpack_from("!HHIH", reply, position)
         position += 10
         data = reply[position:position + size]
         if len(data) != size:
             raise ValueError("Incomplete answer")
-        if family == 1 and ((kind == 1 and size == 4) or (kind == 28 and size == 16)):
+        if record_class == 1 and ((record_type == 1 and size == 4) or (record_type == 28 and size == 16)):
             result.append(data)
         position += size
     return result

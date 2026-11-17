@@ -5,6 +5,19 @@ import threading
 
 from . import __version__
 
+DOOR = """
+    +--------+
+    |        |   LIMINALGUARD
+    |       .|   ANDROID
+    |        |
+    +--------+"""
+
+RZU = r"""    ___  ____  _   _
+   | _ \|_  / | | | |
+   |   / / /_ | |_| |
+   |_|_\/____| \___/
+       INFORMATIQUE"""
+
 
 class Terminal:
     def __init__(self, color="auto", stream=None):
@@ -23,8 +36,8 @@ class Terminal:
         return f"\033[38;5;{code}m{text}\033[0m" if self.color else text
 
     def banner(self):
-        print(self.paint("\n    +--------+\n    |        |   LIMINALGUARD\n    |       .|   ANDROID\n    |        |\n    +--------+"), file=self.stream)
-        print(self.paint("    ___  ____  _   _\n   | _ \x5c|_  / | | | |\n   |   / / /_ | |_| |\n   |_|_\x5c/____| \x5c___/\n       INFORMATIQUE", "109"), file=self.stream)
+        print(self.paint(DOOR), file=self.stream)
+        print(self.paint(RZU, "109"), file=self.stream)
         print(f"    by RZU Informatique · {__version__}\n    Version expérimentale\n", file=self.stream, flush=True)
 
     def render(self, frame=0):

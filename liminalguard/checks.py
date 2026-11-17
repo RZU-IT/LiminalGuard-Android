@@ -33,7 +33,10 @@ def check_server(host, port, progress=None):
         if progress:
             progress(65 if not tcp else 80, "DNS UDP vérifié" if not tcp else "DNS TCP vérifié")
     reply = ask(host, port, query("ad.doubleclick.net"))
-    blocked = reply[3] & 15 == 3 or (bool(addresses(reply)) and all(not any(value) for value in addresses(reply)))
+    response_code = reply[3] & 15
+    resolved_addresses = addresses(reply) if response_code != 3 else []
+    null_addresses = bool(resolved_addresses) and all(not any(value) for value in resolved_addresses)
+    blocked = response_code == 3 or null_addresses
     if not blocked:
         raise ValueError("Le domaine de contrôle publicitaire n'est pas bloqué")
     if progress:
