@@ -1,10 +1,12 @@
-# LiminalGuard Android
+# LiminalGuard Android — expérimental
 
 ![LiminalGuard](assets/logo.svg)
 
 Relais DNS antipub expérimental sur Android, utilisable depuis les appareils du même Wi-Fi.
 
-**0.1.0-alpha.2 — pas encore validé sur un téléphone Android physique.** Le premier essai sert à vérifier le port 53 et l'accès depuis la console. Certains téléphones refuseront ce port sans privilèges supplémentaires ; le script s'arrête alors sans annoncer un DNS prêt.
+**Version expérimentale 0.1.0-alpha.2 — en cours de test, pas encore validée sur un téléphone Android physique.** Le premier essai sert à vérifier le port 53 et l'accès depuis la console. Certains téléphones refuseront ce port sans privilèges supplémentaires ; le script s'arrête alors sans annoncer un DNS prêt.
+
+Pour Ubuntu et Raspberry Pi OS : [LiminalGuard Linux — version bêta](https://github.com/RZU-IT/LiminalGuard). Les deux versions ont des fonctionnements et des validations distincts.
 
 ## Essai sur téléphone
 
