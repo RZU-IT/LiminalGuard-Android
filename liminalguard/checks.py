@@ -25,12 +25,16 @@ def ask(host, port, packet, tcp=False):
     return validate_reply(packet, reply)
 
 
-def check_server(host, port):
+def check_server(host, port, progress=None):
     for tcp in (False, True):
         reply = ask(host, port, query("example.org"), tcp=tcp)
         if reply[3] & 15 or not addresses(reply):
             raise ValueError("La résolution DNS normale échoue")
+        if progress:
+            progress(65 if not tcp else 80, "DNS UDP vérifié" if not tcp else "DNS TCP vérifié")
     reply = ask(host, port, query("ad.doubleclick.net"))
     blocked = reply[3] & 15 == 3 or (bool(addresses(reply)) and all(not any(value) for value in addresses(reply)))
     if not blocked:
         raise ValueError("Le domaine de contrôle publicitaire n'est pas bloqué")
+    if progress:
+        progress(95, "Filtrage vérifié")

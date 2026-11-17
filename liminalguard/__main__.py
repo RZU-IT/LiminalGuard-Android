@@ -1,82 +1,94 @@
 import argparse
 import errno
-import os
 import shutil
-import socket
 import subprocess
 import sys
 import threading
 
 from . import __version__
 from .checks import check_server
+from .network import detect_ip
 from .server import Server, local_address
+from .terminal import Terminal
 from .upstream import AdGuardDNS
 
 
-def detect_ip():
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as connection:
-        connection.connect(("1.1.1.1", 443))
-        return connection.getsockname()[0]
+def wait_for_shutdown(server, thread):
+    while thread.is_alive():
+        thread.join(0.5)
+    if not server.stopped.is_set():
+        raise RuntimeError("Le serveur DNS s'est arrêté")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="DNS Wi-Fi expérimental pour console — RZU Informatique")
+    parser = argparse.ArgumentParser(description="Relais DNS Android — RZU Informatique")
     parser.add_argument("--version", action="version", version=__version__)
-    parser.add_argument("--ip", help="IPv4 Wi-Fi du téléphone")
-    parser.add_argument("--check", action="store_true", help="tester un relais déjà démarré")
+    parser.add_argument("--ip", help="choisir l'IPv4 Wi-Fi du téléphone")
+    parser.add_argument("--check", action="store_true", help="vérifier un relais déjà démarré")
+    parser.add_argument("--color", choices=("auto", "always", "never"), default="auto")
     args = parser.parse_args()
-    color = sys.stdout.isatty() and "NO_COLOR" not in os.environ
-    accent, reset = ("\033[38;5;150m", "\033[0m") if color else ("", "")
-    print(f"{accent}  +---+  LiminalGuard Android {__version__}\n  |   |  by RZU Informatique\n  |  .|  EXPÉRIMENTAL\n  +---+{reset}", flush=True)
-    server = None
-    thread = None
+    terminal = Terminal(args.color)
+    terminal.banner()
+    server = thread = None
     wake = False
     try:
-        host = args.ip or detect_ip()
+        terminal.start()
+        terminal.stage(5, "Recherche du téléphone")
+        host, source = (args.ip, "manual") if args.ip else detect_ip()
         if not local_address(host):
-            raise ValueError("Aucune IPv4 privée détectée. Connectez le téléphone au Wi-Fi et utilisez --ip si nécessaire.")
+            raise ValueError("Adresse locale invalide. Connectez le téléphone au Wi-Fi.")
+        terminal.stage(20, "Adresse locale détectée")
         if args.check:
-            check_server(host, 53)
-            print("DNS UDP/TCP et domaine publicitaire : vérifications locales réussies.")
-            return 0
-        server = Server(host, 53, AdGuardDNS())
-        server.bind()
-        thread = threading.Thread(target=server.serve, daemon=True)
-        thread.start()
-        print("Vérification DNS UDP/TCP et filtrage…", flush=True)
-        check_server(host, 53)
-        if shutil.which("termux-wake-lock"):
-            wake = subprocess.run(["termux-wake-lock"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0
-        print(f"\n{accent}DNS de votre console : {host}{reset}", flush=True)
-        print("Même Wi-Fi pour le téléphone et la console. Désactivez le VPN pendant cet essai.")
-        print("Laissez Termux actif et autorisez son activité en arrière-plan dans Android.")
-        print("Contrôle local réussi ; l'accès depuis la console reste à tester.")
-        print("AdGuard DNS assure le filtrage à distance. Aucun historique de requêtes local.")
-        print("Ctrl+C arrête le DNS. Remettez alors la console en DNS automatique.", flush=True)
-        while thread.is_alive():
-            thread.join(0.5)
-        if not server.stopped.is_set():
-            raise RuntimeError("Le serveur DNS s'est arrêté")
-    except KeyboardInterrupt:
-        print("\nDNS arrêté. Remettez la console en DNS automatique.")
-    except OSError as error:
-        if error.errno in (errno.EACCES, errno.EPERM):
-            print("\nAndroid refuse le port DNS 53. Ce téléphone ne permet pas ce mode avec les droits actuels.\nAucun DNS prêt pour la console ; aucune modification système effectuée.", file=sys.stderr)
-        elif error.errno == errno.EADDRINUSE:
-            print("\nLe port 53 est déjà utilisé. Aucune installation existante n'a été arrêtée.", file=sys.stderr)
+            check_server(host, 53, progress=terminal.stage)
         else:
-            print(f"\nÉchec réseau ({type(error).__name__}). Vérifiez le Wi-Fi et l'accès Internet.", file=sys.stderr)
-        return 1
-    except (ValueError, RuntimeError) as error:
-        print(f"\n{error}\nLe DNS n'est pas annoncé prêt.", file=sys.stderr)
+            server = Server(host, 53, AdGuardDNS())
+            server.bind()
+            terminal.stage(40, "Service DNS démarré")
+            thread = threading.Thread(target=server.serve, daemon=True)
+            thread.start()
+            check_server(host, 53, progress=terminal.stage)
+            if shutil.which("termux-wake-lock"):
+                try:
+                    wake = subprocess.run(["termux-wake-lock"], timeout=3,
+                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0
+                except (OSError, subprocess.TimeoutExpired):
+                    pass
+        terminal.stage(100, "Prêt" if not args.check else "Contrôle terminé")
+        terminal.finish()
+        terminal.identity(host, source, checking=args.check)
+        if args.check:
+            print("Contrôle terminé ; cette commande n'a pas lancé de nouveau serveur.")
+            return 0
+        if not wake:
+            print("Veille non verrouillée : autorisez l'activité en arrière-plan dans Android.", flush=True)
+        wait_for_shutdown(server, thread)
+    except KeyboardInterrupt:
+        terminal.finish()
+        print("\nRelais arrêté. Remettez les appareils en DNS automatique.")
+    except (OSError, ValueError, RuntimeError) as error:
+        terminal.finish()
+        if isinstance(error, OSError) and error.errno in (errno.EACCES, errno.EPERM):
+            message = "Android refuse le port DNS 53 avec les droits actuels."
+        elif isinstance(error, OSError) and error.errno == errno.EADDRINUSE:
+            message = "Le port 53 est déjà utilisé. Aucun service existant n'a été arrêté."
+        elif isinstance(error, OSError):
+            message = "Connexion impossible. Vérifiez le Wi-Fi et l'accès Internet."
+        else:
+            message = str(error)
+        print(f"\n{message}\nLe relais n'est pas annoncé prêt.", file=sys.stderr)
         return 1
     finally:
+        terminal.finish()
         if server:
             server.close()
         if thread:
             thread.join(timeout=2)
         if wake and shutil.which("termux-wake-unlock"):
-            subprocess.run(["termux-wake-unlock"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            try:
+                subprocess.run(["termux-wake-unlock"], timeout=3,
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            except (OSError, subprocess.TimeoutExpired):
+                pass
     return 0
 
 

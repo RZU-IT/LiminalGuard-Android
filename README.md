@@ -2,9 +2,9 @@
 
 ![LiminalGuard](assets/logo.svg)
 
-Serveur DNS Wi-Fi expérimental pour utiliser le téléphone comme relais antipub d'une console.
+Relais DNS antipub expérimental sur Android, utilisable depuis les appareils du même Wi-Fi.
 
-**0.1.0-alpha.1 — pas encore validé sur un téléphone Android physique.** Le premier essai sert à vérifier le port 53 et l'accès depuis la console. Certains téléphones refuseront ce port sans privilèges supplémentaires ; le script s'arrête alors sans annoncer un DNS prêt.
+**0.1.0-alpha.2 — pas encore validé sur un téléphone Android physique.** Le premier essai sert à vérifier le port 53 et l'accès depuis la console. Certains téléphones refuseront ce port sans privilèges supplémentaires ; le script s'arrête alors sans annoncer un DNS prêt.
 
 ## Essai sur téléphone
 
@@ -20,7 +20,7 @@ bash LiminalGuard-Android/installer.sh
 
 Accepter les permissions réseau ou d'arrière-plan proposées par Android si nécessaires. Les paquets proviennent des dépôts de Termux ; aucune application Linux supplémentaire n'est requise.
 
-Le programme vérifie l'écoute sur le port 53 UDP/TCP, une résolution normale et un domaine publicitaire de contrôle. Seulement après ces vérifications, il affiche **DNS de votre console : adresse IP**.
+Une porte en ASCII, le titre LiminalGuard et la signature by RZU Informatique accompagnent une progression colorée liée aux étapes réelles. Le programme vérifie le port 53 UDP/TCP, une résolution normale et un domaine publicitaire de contrôle. Il affiche ensuite **Identifiant du téléphone : adresse IP**. Cet identifiant est simplement l'IPv4 locale du téléphone, pas un identifiant matériel ou personnel.
 
 Dans les réglages réseau de la console, utiliser cette adresse comme DNS principal. Ne pas ajouter un DNS public non filtrant en secondaire : la console pourrait l'utiliser et contourner le relais. Si un second champ est obligatoire et accepte la même adresse, recopier celle du téléphone.
 
@@ -30,13 +30,13 @@ Si le test réseau de la console échoue, remettre son DNS en automatique. Le co
 
 Laisser Termux actif. Autoriser son fonctionnement en arrière-plan et désactiver son optimisation de batterie si nécessaire. Un verrou de veille est demandé lorsqu'il est disponible ; il ne garantit pas qu'Android conservera le processus. Cette version ne configure pas de lancement automatique après redémarrage. Un téléphone utilisé en permanence comme serveur consomme de la batterie.
 
-L'adresse détectée vient de la route réseau active. Désactiver le VPN et vérifier qu'elle correspond au Wi-Fi, pas au réseau mobile. Pour la choisir explicitement :
+Le programme cherche d'abord l'IPv4 des interfaces Wi-Fi Android sans dépendre de `ifconfig`, de netlink ou de Termux:API. Si Android ne permet pas cette lecture, il utilise la route réseau active et signale que le Wi-Fi n'a pas été identifié. Désactiver le VPN et vérifier alors que l'adresse correspond au Wi-Fi. Pour la choisir explicitement :
 
 ```bash
 bash LiminalGuard-Android/installer.sh --ip 192.168.1.25
 ```
 
-Réserver cette adresse dans la box évite qu'elle change. Aucune redirection de port vers Internet n'est nécessaire.
+Aucune manipulation de la box n'est obligatoire pour le premier essai. Termux partage l'adresse réseau d'Android : ce n'est pas une machine virtuelle avec une adresse séparée. L'outil relit l'adresse à chaque lancement et ne la rend pas statique. Si Android change cette adresse, mettre à jour les appareils qui l'utilisent. Une réservation DHCP dans la box reste une option pour un serveur permanent, pas une étape imposée par cet installateur. Aucune redirection de port vers Internet n'est nécessaire.
 
 Ctrl+C arrête le relais. Remettre la console en DNS automatique dès que le téléphone ou le relais est arrêté. Pour relancer, réexécuter la deuxième commande.
 
@@ -57,6 +57,8 @@ Le filtrage DNS ne bloque pas toutes les publicités, notamment celles diffusée
 IPv6, partage de connexion mobile, interface de gestion, démarrage automatique et fonctionnement prolongé écran éteint ne sont pas validés. Ne pas présenter cette alpha comme un remplacement garanti d'un serveur permanent.
 
 ## Vérification et développement
+
+Les couleurs suivent le terminal ; `--color always`, `--color never` et `NO_COLOR` permettent de les régler. La progression reste textuelle lorsqu'elle est redirigée vers un fichier.
 
 Dans une autre session Termux, pour contrôler le serveur déjà lancé :
 
