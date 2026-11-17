@@ -1,6 +1,8 @@
-# Validation — 0.1.0-alpha.2
+# Validation — 0.1.0-alpha.3
 
 Vérifications du 17 novembre 2026 sur Windows et Ubuntu sous WSL. Android physique et console non testés.
+
+Alpha.3 clarifie les noms du parseur DNS, le calcul du blocage et les chaînes du logo ASCII. L'affichage du logo est identique ; les changements du parseur ont été comparés par AST après normalisation des noms. Les suites Windows/WSL et le contrôle AdGuard réel ont été rejoués après ces corrections.
 
 ## Exécuté
 
