@@ -20,7 +20,7 @@ RZU = r"""    ___  ____  _   _
 
 
 class Terminal:
-    def __init__(self, color="auto", stream=None):
+    def __init__(self, color="auto", stream=None, details=False):
         self.stream = stream or sys.stdout
         self.interactive = self.stream.isatty()
         self.color = color == "always" or (color == "auto" and self.interactive and "NO_COLOR" not in os.environ)
@@ -31,11 +31,14 @@ class Terminal:
         self.stop = threading.Event()
         self.thread = None
         self.finished = False
+        self.details = details
 
     def paint(self, text, code="150"):
         return f"\033[38;5;{code}m{text}\033[0m" if self.color else text
 
     def banner(self):
+        if self.interactive and os.environ.get("TERM") != "dumb":
+            self.stream.write("\033[2J\033[H")
         print(self.paint(DOOR), file=self.stream)
         print(self.paint(RZU, "109"), file=self.stream)
         print(f"    by RZU Informatique · {__version__}\n    Version expérimentale\n", file=self.stream, flush=True)
@@ -46,7 +49,8 @@ class Terminal:
         bar = "=" * filled + " " * (width - filled)
         spinner = "|/-\\"[frame % 4] if self.percent < 100 else "+"
         available = max(0, self.columns - width - 11)
-        return f"{spinner} [{bar}] {self.percent:3d}% {self.label[:available]}".rstrip()
+        label = self.label[:available] if self.details else ""
+        return f"{spinner} [{bar}] {self.percent:3d}% {label}".rstrip()
 
     def start(self):
         if self.interactive:
@@ -68,7 +72,7 @@ class Terminal:
             if self.interactive:
                 self.stream.write("\r" + " " * max(0, self.columns - 1) + "\r" + self.paint(self.render()))
                 self.stream.flush()
-            else:
+            elif self.details or percent == 100:
                 print(self.render(), file=self.stream, flush=True)
 
     def finish(self):
@@ -83,8 +87,10 @@ class Terminal:
 
     def identity(self, host, source, checking=False):
         print("\n" + self.paint(f"Identifiant du téléphone : {host}"), file=self.stream)
-        if not checking:
+        if not checking and self.details:
             print("Filtrage actif. Gardez Termux ouvert. Ctrl+C pour arrêter.", file=self.stream)
-        if source == "route":
+        if source == "route" and self.details:
             print("Wi-Fi non identifié : vérifiez que cette adresse est celle du Wi-Fi, sans VPN.", file=self.stream)
-        print("L'adresse est relue à chaque lancement ; elle n'est pas rendue statique.", file=self.stream, flush=True)
+        if self.details:
+            print("L'adresse est relue à chaque lancement ; elle n'est pas rendue statique.", file=self.stream)
+        self.stream.flush()

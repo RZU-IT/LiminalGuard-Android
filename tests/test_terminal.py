@@ -34,7 +34,7 @@ class TerminalTests(unittest.TestCase):
         terminal.columns = 40
         terminal.stage(65, "DNS UDP vérifié")
         self.assertLessEqual(len(terminal.render()), 40)
-        self.assertIn("DNS UDP", terminal.render())
+        self.assertNotIn("DNS UDP", terminal.render())
 
     def test_progress_thread_stops_and_finish_is_idempotent(self):
         terminal = Terminal("never", stream=Tty())
@@ -46,5 +46,31 @@ class TerminalTests(unittest.TestCase):
 
     def test_route_warning_does_not_claim_wifi_detection(self):
         stream = io.StringIO()
-        Terminal(stream=stream).identity("10.1.2.3", "route")
+        Terminal(stream=stream, details=True).identity("10.1.2.3", "route")
         self.assertIn("Wi-Fi non identifié", stream.getvalue())
+
+    def test_default_identity_has_no_technical_details(self):
+        stream = io.StringIO()
+        Terminal(stream=stream).identity("192.168.1.25", "route")
+        self.assertEqual(stream.getvalue().strip(), "Identifiant du téléphone : 192.168.1.25")
+
+    def test_default_redirected_progress_prints_only_completion(self):
+        stream = io.StringIO()
+        terminal = Terminal(stream=stream)
+        terminal.stage(20, "Adresse locale détectée")
+        terminal.stage(65, "DNS UDP vérifié")
+        self.assertEqual(stream.getvalue(), "")
+        terminal.stage(100, "Prêt")
+        self.assertEqual(len(stream.getvalue().splitlines()), 1)
+        self.assertNotIn("Prêt", stream.getvalue())
+
+    def test_details_show_stage_names(self):
+        stream = io.StringIO()
+        Terminal(stream=stream, details=True).stage(65, "DNS UDP vérifié")
+        self.assertIn("DNS UDP", stream.getvalue())
+
+    def test_interactive_banner_clears_previous_package_output(self):
+        stream = Tty()
+        with patch.dict(os.environ, {"TERM": "xterm"}):
+            Terminal(stream=stream).banner()
+        self.assertTrue(stream.getvalue().startswith("\033[2J\033[H"))

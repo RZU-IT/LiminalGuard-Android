@@ -1,17 +1,17 @@
-# Validation — 0.1.0-alpha.3
+# Validation — 0.1.0-alpha.4
 
-Vérifications du 17 novembre 2026 sur Windows et Ubuntu sous WSL. Android physique et console non testés.
+Vérifications du 17 novembre 2026 sur Windows et Ubuntu sous WSL. Pas de validation positive sur Android physique ou console. Le premier retour utilisateur, capture Termux à l’appui, montre un refus du port 53 sur son téléphone ; modèle et version Android non communiqués.
 
 Alpha.3 clarifie les noms du parseur DNS, le calcul du blocage et les chaînes du logo ASCII. L'affichage du logo est identique ; les changements du parseur ont été comparés par AST après normalisation des noms. Les suites Windows/WSL et le contrôle AdGuard réel ont été rejoués après ces corrections.
 
 ## Exécuté
 
-- Trente-quatre tests Python : 32 réussis et deux contrôles ioctl Linux ignorés sous Windows ; 34 réussis sous WSL : protocole, paquets invalides, port occupé, permission refusée, refus d'adresse publique, débit limité, DNS UDP/TCP, domaine bloqué, panne amont, réponse inattendue, troncature UDP et arrêt du serveur.
+- Trente-neuf tests Python : 36 réussis et trois contrôles Linux ignorés sous Windows ; 39 réussis sous WSL : protocole, paquets invalides, port occupé, permission refusée, refus d'adresse publique, débit limité, DNS UDP/TCP, domaine bloqué, panne amont, réponse inattendue, troncature UDP et arrêt du serveur.
 - Sockets réels loopback sur des ports temporaires avec fournisseur simulé pour la suite déterministe. Les erreurs des threads de service font échouer les tests.
 - Essai réseau avec le vrai service AdGuard DNS en HTTPS : example.org résolu via UDP et TCP locaux ; ad.doubleclick.net bloqué. Cet essai passe sous Windows et sous WSL. Aucun réglage DNS système modifié.
 - Syntaxe Bash, ShellCheck, aide et version du lanceur contrôlés sous WSL.
 
-Les refus de permission sont simulés dans les tests de l'interface. Ils ne prouvent pas les autorisations d'un téléphone. Aucun essai du port 53 d'un Android n'a été réalisé. Aucun résultat PC/WSL ne vaut validation du Wi-Fi ou de la gestion des processus Android.
+Les refus de permission sont simulés dans les tests de l'interface. Ils ne prouvent pas les autorisations d'un téléphone. Le retour utilisateur confirme un refus du port 53, pas un fonctionnement du relais sur Android. Aucun résultat PC/WSL ne vaut validation du Wi-Fi ou de la gestion des processus Android.
 
 ## Premier essai Android
 
@@ -56,3 +56,7 @@ Références consultées le 17 novembre 2026 :
 - [PRoot : pas de véritables privilèges root ni de réseau isolé](https://github.com/termux/proot-distro#proot-limitations).
 
 Les tests ajoutés couvrent la préférence Wi-Fi, le secours par route, le refus d'adresse publique, l'absence de réseau, les refus ioctl, la progression sur 40 colonnes, les couleurs, l'arrêt du thread d'animation, les échecs avant 100 %, le contrôle sans lancement de service et un démarrage avec de vrais sockets suivi d'une interruption. Les permissions Android sont simulées ; les essais ioctl ciblés tournent sous Linux, pas sur Android physique.
+
+## Affichage alpha.4
+
+Le mode normal conserve le logo, une seule barre et l’adresse finale. Le lancement interactif efface l’affichage précédent sans supprimer l’historique des commandes. `--details` affiche les étapes et informations de diagnostic. Une erreur reste visible sous forme courte ; le refus du port 53 n’est pas contourné. Les tests couvrent aussi la sortie simplifiée, le nettoyage d’écran et l’échec de préparation sans fuite des sorties de paquets.

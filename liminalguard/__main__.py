@@ -26,8 +26,9 @@ def main():
     parser.add_argument("--ip", help="choisir l'IPv4 Wi-Fi du téléphone")
     parser.add_argument("--check", action="store_true", help="vérifier un relais déjà démarré")
     parser.add_argument("--color", choices=("auto", "always", "never"), default="auto")
+    parser.add_argument("--details", action="store_true", help="afficher les détails du démarrage")
     args = parser.parse_args()
-    terminal = Terminal(args.color)
+    terminal = Terminal(args.color, details=args.details)
     terminal.banner()
     server = thread = None
     wake = False
@@ -57,25 +58,28 @@ def main():
         terminal.finish()
         terminal.identity(host, source, checking=args.check)
         if args.check:
-            print("Contrôle terminé ; cette commande n'a pas lancé de nouveau serveur.")
+            if args.details:
+                print("Contrôle terminé ; cette commande n'a pas lancé de nouveau serveur.")
             return 0
-        if not wake:
+        if not wake and args.details:
             print("Veille non verrouillée : autorisez l'activité en arrière-plan dans Android.", flush=True)
         wait_for_shutdown(server, thread)
     except KeyboardInterrupt:
         terminal.finish()
-        print("\nRelais arrêté. Remettez les appareils en DNS automatique.")
+        print("\nRelais arrêté.")
     except (OSError, ValueError, RuntimeError) as error:
         terminal.finish()
         if isinstance(error, OSError) and error.errno in (errno.EACCES, errno.EPERM):
-            message = "Android refuse le port DNS 53 avec les droits actuels."
+            message = "Android refuse le port 53 sur ce téléphone."
         elif isinstance(error, OSError) and error.errno == errno.EADDRINUSE:
-            message = "Le port 53 est déjà utilisé. Aucun service existant n'a été arrêté."
+            message = "Le port 53 est déjà utilisé."
         elif isinstance(error, OSError):
             message = "Connexion impossible. Vérifiez le Wi-Fi et l'accès Internet."
         else:
-            message = str(error)
-        print(f"\n{message}\nLe relais n'est pas annoncé prêt.", file=sys.stderr)
+            message = str(error) if args.details else "Démarrage impossible. Vérifiez le Wi-Fi et Internet."
+        print(f"\n{message}", file=sys.stderr)
+        if args.details:
+            print(f"{type(error).__name__}: {error}", file=sys.stderr)
         return 1
     finally:
         terminal.finish()

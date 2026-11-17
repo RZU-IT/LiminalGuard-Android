@@ -4,8 +4,10 @@ set -eu
 project_dir="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 if ! command -v python3 >/dev/null 2>&1 && ! command -v python >/dev/null 2>&1; then
     if command -v pkg >/dev/null 2>&1; then
-        printf 'Installation de Python via les paquets Termux…\n'
-        pkg install -y python
+        if ! pkg install -y python >/dev/null 2>&1; then
+            printf 'Préparation impossible. Vérifiez Internet et réessayez.\n' >&2
+            exit 1
+        fi
     else
         printf 'Python 3.10+ requis. Lancez cet outil dans Termux.\n' >&2
         exit 1
