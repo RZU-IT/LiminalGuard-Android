@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 290">
+  <rect width="1100" height="290" rx="18" fill="#F2EFDF"/>
+  <rect x="46" y="53" width="184" height="184" rx="31" fill="#30382B"/>
+  <g transform="translate(46 53) scale(1.2777778)">
+    <path fill="#E8E3CC" d="M28 124V20h88v104h-15V35H43v89z"/>
+    <path fill="#BFB16D" d="M57 124V49h30v75H75V61h-6v63z"/>
+    <path fill="#E8E3CC" d="m101 124 15 0 13 9H15l13-9h15l-7 4h72z"/>
+  </g>
+  <text x="275" y="148" fill="#30382B" font-family="Segoe UI,Arial,sans-serif" font-size="82" font-weight="600" letter-spacing="-2">LiminalGuard</text>
+  <text x="280" y="193" fill="#6C735F" font-family="Segoe UI,Arial,sans-serif" font-size="23" letter-spacing="2">ADGUARD HOME SETUP</text>
+  <text x="282" y="229" fill="#7C806D" font-family="Segoe UI,Arial,sans-serif" font-size="17" letter-spacing="1">BY RZU INFORMATIQUE</text>
+</svg>
